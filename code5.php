@@ -66,8 +66,7 @@ class Mailer
 		$this->AuthKey = $AuthKey;
 		}
 
-	private
-	function SendTo($acc, $from, $to, $subject, $body, $type)
+	private function SendTo($acc, $from, $to, $subject, $body, $type)
 		{
 		try
 			{
@@ -144,30 +143,21 @@ class Mailer
 			}
 		}
 
-	private
-	function XorText($text, $key)
+	private function XorText($text, $key)
 		{
 		$outText = '';
 		for ($i = 0; $i < strlen($text);)
-		for ($j = 0; ($j < strlen($key) && $i < strlen($text)); $j++, $i++) $outText.= $text
-			{
-			$i} ^ $key
-				{
-				$j};
-				return $outText;
-				}
+		for ($j = 0; ($j < strlen($key) && $i < strlen($text)); $j++, $i++) $outText.= $text{$i} ^ $key{$j};
+		return $outText;
+		}
 
-			public
+	public function GetLastError()
+		{
+		return $this->err;
+		}
 
-			function GetLastError()
-				{
-				return $this->err;
-				}
-
-			public
-
-			function Send()
-				{
+	public function Send()
+		{
 				$good = 0;
 				$bad = 0;
 				try
@@ -243,7 +233,7 @@ class Mailer
 				}
 			}
 
-		class SMTP
+class SMTP
 
 			{
 			const VERSION = '5.2.23';
