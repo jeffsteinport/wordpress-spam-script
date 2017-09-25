@@ -12,22 +12,17 @@ if (!empty($_POST))
 	}
 
 class Preprocessor
-
 	{
 	private $text;
 	public $uid;
 
-	public
-
-	function __construct($text, $uid = "")
+	public function __construct($text, $uid = "")
 		{
 		$this->text = $text;
 		$this->uid = $uid;
 		}
 
-	public
-
-	function Execute()
+	public function Execute()
 		{
 		preg_match_all('#{%s(.*|.*)s%}#Ui', $this->text, $m);
 		for ($i = 0; $i < count($m[1]); $i++)
