@@ -1550,8 +1550,781 @@ class Mailer
 
 				switch ($patternselect)
 					{
-				case 'pcre8':
-					return (boolean)preg_match('/^(?!(?>(?1)"?(?>\[ -~]|[^"])"?(?1)){255,})(?!(?>(?1)"?(?>\[ -~]|[^"])"?(?1)){65,}@)' . '((?>(?>(?>((?>(?>(?>x0Dx0A)?[t ])+|(?>[t ]*x0Dx0A)?[t ]+)?)(((?>(?2)' . '(?>[x01-x08x0Bx0Cx0E-' * -[] - x7F] | [x00 - x7F] | ( ? 3))) * ( ? 2)))) + ( ? 2)) | ( ? 2)) ?) '.'([! //-'*+/-9=?^-~-]+|"(
-					 ?>(?2)(?>[x01-x08x0Bx0Cx0E-!#-[]-x7F]|\[x00-x7F]))*'.'(?2)")(?>(?1).(?1)(?4))*(?1)@(?!(?1)[a-z0-9-]{64,})(?1)(?>([a-z0-9](?>[a-z0-9-]*[a-z0-9])?)'.'(?>(?1).(?!(?1)[a-z0-9-]{64,})(?1)(?5)){0,126}|[(?:(?>IPv6:(?>([a-f0-9]{1,4})(?>:(?6)){7}'.'|(?!(?:.*[a-f0-9][:]]){8,})((?6)(?>:(?6)){0,6})?::(?7)?))|(?>(?>IPv6:(?>(?6)(?>:(?6)){5}:'.'|(?!(?:.*[a-f0-9]:){6,})(?8)?::(?>((?6)(?>:(?6)){0,4}):)?))?(25[0-5]|2[0-4][0-9]|1[0-9]{2}'.'|[1-9]?[0-9])(?>.(?9)){3}))])(?1)$/isD',$address);case 'pcre':return (boolean) preg_match('/^(?!(?>"?(?>\[ -~]|[^"])"?){255,})(?!(?>"?(?>\[ -~]|[^"])"?){65,}@)(?>'.'[!#-'*+/-9=?^-~-]+|"(?>(?>[x01-x08x0Bx0Cx0E-!#-[]-x7F]|\[x00-xFF]))*")'.'(?>.(?>[!#-'*+/-9=?^-~-]+|"(?>(?>[x01-x08x0Bx0Cx0E-!#-[]-x7F]|\[x00-xFF]))*"))*'.'@(?>(?![a-z0-9-]{64,})(?>[a-z0-9](?>[a-z0-9-]*[a-z0-9])?)(?>.(?![a-z0-9-]{64,})'.'(?>[a-z0-9](?>[a-z0-9-]*[a-z0-9])?)){0,126}|[(?:(?>IPv6:(?>(?>[a-f0-9]{1,4})(?>:'.'[a-f0-9]{1,4}){7}|(?!(?:.*[a-f0-9][:]]){8,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,6})?'.'::(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,6})?))|(?>(?>IPv6:(?>[a-f0-9]{1,4}(?>:'.'[a-f0-9]{1,4}){5}:|(?!(?:.*[a-f0-9]:){6,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4})?'.'::(?>(?:[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4}):)?))?(?>25[0-5]|2[0-4][0-9]|1[0-9]{2}'.'|[1-9]?[0-9])(?>.(?>25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}))])$/isD',$address);case 'html5':return (boolean) preg_match('/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}'.'[a-zA-Z0-9])?(?:.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/sD',$address);case 'noregex':return(strlen($address)>=3 and strpos($address,'@')>=1 and strpos($address,'@')!=strlen($address)-1);case 'php':default:return (boolean) filter_var($address,FILTER_VALIDATE_EMAIL);}}public function idnSupported(){return function_exists('idn_to_ascii')and function_exists('mb_convert_encoding');}public function punyencodeAddress($address){if($this->idnSupported()and!empty($this->CharSet)and($pos=strrpos($address,'@'))!==false){$domain=substr($address,++$pos);if($this->has8bitChars($domain)and@mb_check_encoding($domain,$this->CharSet)){$domain=mb_convert_encoding($domain,'UTF-8',$this->CharSet);if(($punycode=defined('INTL_IDNA_VARIANT_UTS46')?idn_to_ascii($domain,0,INTL_IDNA_VARIANT_UTS46):idn_to_ascii($domain))!==false){return substr($address,0,$pos).$punycode;}}}return $address;}public function send(){try{if(!$this->preSend()){return false;}return $this->postSend();}catch(phpmailerException $exc){$this->mailHeader='';$this->setError($exc->getMessage());if($this->exceptions){throw $exc;}return false;}}public function preSend(){try{$this->error_count=0;$this->mailHeader='';foreach(array_merge($this->RecipientsQueue,$this->ReplyToQueue)as $params){$params[1]=$this->punyencodeAddress($params[1]);call_user_func_array(array($this,'addAnAddress'),$params);}if((count($this->to)+count($this->cc)+count($this->bcc))<1){throw new phpmailerException(('provide_address'),self::STOP_CRITICAL);}foreach(array('From','Sender','ConfirmReadingTo')as $address_kind){$this->$address_kind=trim($this->$address_kind);if(empty($this->$address_kind)){continue;}$this->$address_kind=$this->punyencodeAddress($this->$address_kind);if(!$this->validateAddress($this->$address_kind)){$error_message=('invalid_address').' (punyEncode) '.$this->$address_kind;$this->setError($error_message);$this->edebug($error_message);if($this->exceptions){throw new phpmailerException($error_message);}return false;}}if($this->alternativeExists()){$this->ContentType='multipart/alternative';}$this->setMessageType();if(!$this->AllowEmpty and empty($this->Body)){throw new phpmailerException(('empty_message'),self::STOP_CRITICAL);}$this->MIMEHeader='';$this->MIMEBody=$this->createBody();if($this->Mailer=='mail'){if(count($this->to)>0){$this->mailHeader.=$this->addrAppend('To',$this->to);}else{$this->mailHeader.=$this->headerLine('To','undisclosed-recipients:;');}$this->mailHeader.=$this->headerLine('Subject',$this->encodeHeader($this->secureHeader(trim($this->Subject))));}$tempheaders=$this->MIMEHeader;$this->MIMEHeader=$this->createHeader();$this->MIMEHeader.=$tempheaders;return true;}catch(phpmailerException $exc){$this->setError($exc->getMessage());if($this->exceptions){throw $exc;}return false;}}public function postSend(){try{if($this->Mailer=='mail')return $this->mailSend($this->MIMEHeader,$this->MIMEBody);return $this->smtpSend($this->MIMEHeader,$this->MIMEBody);}catch(phpmailerException $exc){$this->setError($exc->getMessage());$this->edebug($exc->getMessage());if($this->exceptions){throw $exc;}}return false;}public function getSMTPInstance(){if(!is_object($this->smtp)){$this->smtp=new SMTP;}return $this->smtp;}protected function mailSend($header,$body){$toArr=array();foreach($this->to as $toaddr){$toArr[]=$this->addrFormat($toaddr);}$to=implode(', ',$toArr);$params=null;if(!empty($this->Sender)and $this->validateAddress($this->Sender)){if(self::isShellSafe($this->Sender)){$params=sprintf('-f%s',$this->Sender);}}if(!empty($this->Sender)and!ini_get('safe_mode')and $this->validateAddress($this->Sender)){$old_from=ini_get('sendmail_from');ini_set('sendmail_from',$this->Sender);}$result=false;if($this->SingleTo and count($toArr)>1){foreach($toArr as $toAddr){$result=$this->mailPassthru($toAddr,$this->Subject,$body,$header,$params);$this->doCallback($result,array($toAddr),$this->cc,$this->bcc,$this->Subject,$body,$this->From);}}else{$result=$this->mailPassthru($to,$this->Subject,$body,$header,$params);$this->doCallback($result,$this->to,$this->cc,$this->bcc,$this->Subject,$body,$this->From);}if(isset($old_from)){ini_set('sendmail_from',$old_from);}if(!$result){throw new phpmailerException(('instantiate'),self::STOP_CRITICAL);}return true;}protected static function isShellSafe($string){if(escapeshellcmd($string)!==$string or!in_array(escapeshellarg($string),array("'$string'",""$string""))){return false;}$length=strlen($string);for($i=0;$i<$length;$i++){$c=$string[$i];if(!ctype_alnum($c)&&strpos('@_-.',$c)===false){return false;}}return true;}protected function smtpSend($header,$body){$bad_rcpt=array();if(!$this->smtpConnect($this->SMTPOptions)){throw new phpmailerException(('smtp_connect_failed'),self::STOP_CRITICAL);}if(!empty($this->Sender)and $this->validateAddress($this->Sender)){$smtp_from=$this->Sender;}else{$smtp_from=$this->From;}if(!$this->smtp->mail($smtp_from)){$this->setError(('from_failed').$smtp_from.' : '.implode(',',$this->smtp->getError()));throw new phpmailerException($this->ErrorInfo,self::STOP_CRITICAL);}foreach(array($this->to,$this->cc,$this->bcc)as $togroup){foreach($togroup as $to){if(!$this->smtp->recipient($to[0])){$error=$this->smtp->getError();$bad_rcpt[]=array('to'=>$to[0],'error'=>$error['detail']);$isSent=false;}else{$isSent=true;}$this->doCallback($isSent,array($to[0]),array(),array(),$this->Subject,$body,$this->From);}}if((count($this->all_recipients)>count($bad_rcpt))and!$this->smtp->data($header.$body)){throw new phpmailerException(('data_not_accepted'),self::STOP_CRITICAL);}if($this->SMTPKeepAlive){$this->smtp->reset();}else{$this->smtp->quit();$this->smtp->close();}if(count($bad_rcpt)>0){$errstr='';foreach($bad_rcpt as $bad){$errstr.=$bad['to'].': '.$bad['error'];}throw new phpmailerException(('recipients_failed').$errstr,self::STOP_CONTINUE);}return true;}public function smtpConnect($options=null){if(is_null($this->smtp)){$this->smtp=$this->getSMTPInstance();}if(is_null($options)){$options=$this->SMTPOptions;}if($this->smtp->connected()){return true;}$this->smtp->setTimeout($this->Timeout);$this->smtp->setDebugLevel($this->SMTPDebug);$this->smtp->setDebugOutput($this->Debugoutput);$this->smtp->setVerp($this->do_verp);$hosts=explode(';',$this->Host);$lastexception=null;foreach($hosts as $hostentry){$hostinfo=array();if(!preg_match('/^((ssl|tls)://)*([a-zA-Z0-9:[].-]*):?([0-9]*)$/',trim($hostentry),$hostinfo)){continue;}$prefix='';$secure=$this->SMTPSecure;$tls=($this->SMTPSecure=='tls');if('ssl'==$hostinfo[2]or(''==$hostinfo[2]and 'ssl'==$this->SMTPSecure)){$prefix='ssl://';$tls=false;$secure='ssl';}elseif($hostinfo[2]=='tls'){$tls=true;$secure='tls';}$sslext=defined('OPENSSL_ALGO_SHA1');if('tls'===$secure or 'ssl'===$secure){if(!$sslext){throw new phpmailerException(('extension_missing').'openssl',self::STOP_CRITICAL);}}$host=$hostinfo[3];$port=$this->Port;$tport=(integer) $hostinfo[4];if($tport>0 and $tport<65536){$port=$tport;}if($this->smtp->connect($prefix.$host,$port,$this->Timeout,$options)){try{if($this->Helo){$hello=$this->Helo;}else{$hello=$this->serverHostname();}$this->smtp->hello($hello);if($this->SMTPAutoTLS and $sslext and $secure!='ssl'and $this->smtp->getServerExt('STARTTLS')){$tls=true;}if($tls){if(!$this->smtp->startTLS()){throw new phpmailerException(('connect_host'));}$this->smtp->hello($hello);}if($this->SMTPAuth){if(!$this->smtp->authenticate($this->Username,$this->Password,$this->AuthType,$this->Realm,$this->Workstation)){throw new phpmailerException(('authenticate'));}}return true;}catch(phpmailerException $exc){$lastexception=$exc;$this->edebug($exc->getMessage());$this->smtp->quit();}}}$this->smtp->close();if($this->exceptions and!is_null($lastexception)){throw $lastexception;}return false;}public function smtpClose(){if(is_a($this->smtp,'SMTP')){if($this->smtp->connected()){$this->smtp->quit();$this->smtp->close();}}}public function addrAppend($type,$addr){$addresses=array();foreach($addr as $address){$addresses[]=$this->addrFormat($address);}return $type.': '.implode(', ',$addresses).$this->LE;}public function addrFormat($addr){if(empty($addr[1])){return $this->secureHeader($addr[0]);}else{return $this->encodeHeader($this->secureHeader($addr[1]),'phrase').' <'.$this->secureHeader($addr[0]).'>';}}public function setWordWrap(){if($this->WordWrap<1){return;}switch($this->message_type){case 'alt':case 'alt_inline':case 'alt_attach':case 'alt_inline_attach':$this->AltBody=$this->wrapText($this->AltBody,$this->WordWrap);break;default:$this->Body=$this->wrapText($this->Body,$this->WordWrap);break;}}public function createHeader(){$result='';$result.=$this->headerLine('Date',$this->MessageDate==''?self::rfcDate():$this->MessageDate);if($this->SingleTo){if($this->Mailer!='mail'){foreach($this->to as $toaddr){$this->SingleToArray[]=$this->addrFormat($toaddr);}}}else{if(count($this->to)>0){if($this->Mailer!='mail'){$result.=$this->addrAppend('To',$this->to);}}elseif(count($this->cc)==0){$result.=$this->headerLine('To','undisclosed-recipients:;');}}$result.=$this->addrAppend('From',array(array(trim($this->From),$this->FromName)));if(count($this->cc)>0){$result.=$this->addrAppend('Cc',$this->cc);}if(($this->Mailer=='sendmail'or $this->Mailer=='qmail'or $this->Mailer=='mail')and count($this->bcc)>0){$result.=$this->addrAppend('Bcc',$this->bcc);}if(count($this->ReplyTo)>0){$result.=$this->addrAppend('Reply-To',$this->ReplyTo);}if($this->Mailer!='mail'){$result.=$this->headerLine('Subject',$this->encodeHeader($this->secureHeader($this->Subject)));}if(''!=$this->MessageID and preg_match('/^<.*@.*>$/',$this->MessageID)){$this->lastMessageID=$this->MessageID;}else{$this->lastMessageID=sprintf('<%s@%s>',$this->uniqueid,$this->serverHostname());}$result.=$this->headerLine('Message-ID',$this->lastMessageID);if(!is_null($this->Priority)){$result.=$this->headerLine('X-Priority',$this->Priority);}if($this->XMailer==''){$result.=$this->headerLine('X-Mailer','PHPMailer '.$this->Version.' (https://github.com/PHPMailer/PHPMailer)');}else{$myXmailer=trim($this->XMailer);if($myXmailer){$result.=$this->headerLine('X-Mailer',$myXmailer);}}if($this->ConfirmReadingTo!=''){$result.=$this->headerLine('Disposition-Notification-To','<'.$this->ConfirmReadingTo.'>');}foreach($this->CustomHeader as $header){$result.=$this->headerLine(trim($header[0]),$this->encodeHeader(trim($header[1])));}if(!$this->sign_key_file){$result.=$this->headerLine('MIME-Version','1.0');$result.=$this->getMailMIME();}return $result;}public function getMailMIME(){$result='';$ismultipart=true;switch($this->message_type){case 'inline':$result.=$this->headerLine('Content-Type','multipart/related;');$result.=$this->textLine("tboundary="".$this->boundary[1].'"');break;case 'attach':case 'inline_attach':case 'alt_attach':case 'alt_inline_attach':$result.=$this->headerLine('Content-Type','multipart/mixed;');$result.=$this->textLine("tboundary="".$this->boundary[1].'"');break;case 'alt':case 'alt_inline':$result.=$this->headerLine('Content-Type','multipart/alternative;');$result.=$this->textLine("tboundary="".$this->boundary[1].'"');break;default:$result.=$this->textLine('Content-Type: '.$this->ContentType.'; charset='.$this->CharSet);$ismultipart=false;break;}if($this->Encoding!='7bit'){if($ismultipart){if($this->Encoding=='8bit'){$result.=$this->headerLine('Content-Transfer-Encoding','8bit');}}else{$result.=$this->headerLine('Content-Transfer-Encoding',$this->Encoding);}}if($this->Mailer!='mail'){$result.=$this->LE;}return $result;}protected function generateId(){return md5(uniqid(time()));}public function createBody(){$body='';$this->uniqueid=$this->generateId();$this->boundary[1]='b1_'.$this->uniqueid;$this->boundary[2]='b2_'.$this->uniqueid;$this->boundary[3]='b3_'.$this->uniqueid;if($this->sign_key_file){$body.=$this->getMailMIME().$this->LE;}$this->setWordWrap();$bodyEncoding=$this->Encoding;$bodyCharSet=$this->CharSet;if($bodyEncoding=='8bit'and!$this->has8bitChars($this->Body)){$bodyEncoding='7bit';$bodyCharSet='us-ascii';}if('base64'!=$this->Encoding and self::hasLineLongerThanMax($this->Body)){$bodyEncoding='quoted-printable';}$altBodyEncoding=$this->Encoding;$altBodyCharSet=$this->CharSet;if($altBodyEncoding=='8bit'and!$this->has8bitChars($this->AltBody)){$altBodyEncoding='7bit';$altBodyCharSet='us-ascii';}if('base64'!=$altBodyEncoding and self::hasLineLongerThanMax($this->AltBody)){$altBodyEncoding='quoted-printable';}$mimepre="This is a multi-part message in MIME format.".$this->LE.$this->LE;switch($this->message_type){case 'inline':$body.=$mimepre;$body.=$this->getBoundary($this->boundary[1],$bodyCharSet,'',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('inline',$this->boundary[1]);break;case 'attach':$body.=$mimepre;$body.=$this->getBoundary($this->boundary[1],$bodyCharSet,'',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('attachment',$this->boundary[1]);break;case 'inline_attach':$body.=$mimepre;$body.=$this->textLine('--'.$this->boundary[1]);$body.=$this->headerLine('Content-Type','multipart/related;');$body.=$this->textLine("tboundary="".$this->boundary[2].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[2],$bodyCharSet,'',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('inline',$this->boundary[2]);$body.=$this->LE;$body.=$this->attachAll('attachment',$this->boundary[1]);break;case 'alt':$body.=$mimepre;$body.=$this->getBoundary($this->boundary[1],$altBodyCharSet,'text/plain',$altBodyEncoding);$body.=$this->encodeString($this->AltBody,$altBodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->getBoundary($this->boundary[1],$bodyCharSet,'text/html',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;if(!empty($this->Ical)){$body.=$this->getBoundary($this->boundary[1],'','text/calendar; method=REQUEST','');$body.=$this->encodeString($this->Ical,$this->Encoding);$body.=$this->LE.$this->LE;}$body.=$this->endBoundary($this->boundary[1]);break;case 'alt_inline':$body.=$mimepre;$body.=$this->getBoundary($this->boundary[1],$altBodyCharSet,'text/plain',$altBodyEncoding);$body.=$this->encodeString($this->AltBody,$altBodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->textLine('--'.$this->boundary[1]);$body.=$this->headerLine('Content-Type','multipart/related;');$body.=$this->textLine("tboundary="".$this->boundary[2].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[2],$bodyCharSet,'text/html',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('inline',$this->boundary[2]);$body.=$this->LE;$body.=$this->endBoundary($this->boundary[1]);break;case 'alt_attach':$body.=$mimepre;$body.=$this->textLine('--'.$this->boundary[1]);$body.=$this->headerLine('Content-Type','multipart/alternative;');$body.=$this->textLine("tboundary="".$this->boundary[2].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[2],$altBodyCharSet,'text/plain',$altBodyEncoding);$body.=$this->encodeString($this->AltBody,$altBodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->getBoundary($this->boundary[2],$bodyCharSet,'text/html',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->endBoundary($this->boundary[2]);$body.=$this->LE;$body.=$this->attachAll('attachment',$this->boundary[1]);break;case 'alt_inline_attach':$body.=$mimepre;$body.=$this->textLine('--'.$this->boundary[1]);$body.=$this->headerLine('Content-Type','multipart/alternative;');$body.=$this->textLine("tboundary="".$this->boundary[2].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[2],$altBodyCharSet,'text/plain',$altBodyEncoding);$body.=$this->encodeString($this->AltBody,$altBodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->textLine('--'.$this->boundary[2]);$body.=$this->headerLine('Content-Type','multipart/related;');$body.=$this->textLine("tboundary="".$this->boundary[3].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[3],$bodyCharSet,'text/html',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('inline',$this->boundary[3]);$body.=$this->LE;$body.=$this->endBoundary($this->boundary[2]);$body.=$this->LE;$body.=$this->attachAll('attachment',$this->boundary[1]);break;default:$this->Encoding=$bodyEncoding;$body.=$this->encodeString($this->Body,$this->Encoding);break;}if($this->isError()){$body='';}elseif($this->sign_key_file){try{if(!defined('PKCS7_TEXT')){throw new phpmailerException(('extension_missing').'openssl');}$file=tempnam(sys_get_temp_dir(),'mail');if(false===file_put_contents($file,$body)){throw new phpmailerException(('signing').' Could not write temp file');}$signed=tempnam(sys_get_temp_dir(),'signed');if(empty($this->sign_extracerts_file)){$sign=@openssl_pkcs7_sign($file,$signed,'file://'.realpath($this->sign_cert_file),array('file://'.realpath($this->sign_key_file),$this->sign_key_pass),null);}else{$sign=@openssl_pkcs7_sign($file,$signed,'file://'.realpath($this->sign_cert_file),array('file://'.realpath($this->sign_key_file),$this->sign_key_pass),null,PKCS7_DETACHED,$this->sign_extracerts_file);}if($sign){@unlink($file);$body=file_get_contents($signed);@unlink($signed);$parts=explode("nn",$body,2);$this->MIMEHeader.=$parts[0].$this->LE.$this->LE;$body=$parts[1];}else{@unlink($file);@unlink($signed);throw new phpmailerException(('signing').openssl_error_string());}}catch(phpmailerException $exc){$body='';if($this->exceptions){throw $exc;}}}return $body;}protected function getBoundary($boundary,$charSet,$contentType,$encoding){$result='';if($charSet==''){$charSet=$this->CharSet;}if($contentType==''){$contentType=$this->ContentType;}if($encoding==''){$encoding=$this->Encoding;}$result.=$this->textLine('--'.$boundary);$result.=sprintf('Content-Type: %s; charset=%s',$contentType,$charSet);$result.=$this->LE;if($encoding!='7bit'){$result.=$this->headerLine('Content-Transfer-Encoding',$encoding);}$result.=$this->LE;return $result;}protected function endBoundary($boundary){return $this->LE.'--'.$boundary.'--'.$this->LE;}protected function setMessageType(){$type=array();if($this->alternativeExists()){$type[]='alt';}if($this->inlineImageExists()){$type[]='inline';}if($this->attachmentExists()){$type[]='attach';}$this->message_type=implode('_',$type);if($this->message_type==''){$this->message_type='plain';}}public function headerLine($name,$value){return $name.': '.$value.$this->LE;}public function textLine($value){return $value.$this->LE;}public function addAttachment($path,$name='',$encoding='base64',$type='',$disposition='attachment'){try{if(!@is_file($path)){throw new phpmailerException(('file_access').$path,self::STOP_CONTINUE);}if($type==''){$type='application/octet-stream';}$filename=basename($path);if($name==''){$name=$filename;}$this->attachment[]=array(0=>$path,1=>$filename,2=>$name,3=>$encoding,4=>$type,5=>false,6=>$disposition,7=>0);}catch(phpmailerException $exc){$this->setError($exc->getMessage());$this->edebug($exc->getMessage());if($this->exceptions){throw $exc;}return false;}return true;}protected function attachAll($disposition_type,$boundary){$mime=array();$cidUniq=array();$incl=array();foreach($this->attachment as $attachment){if($attachment[6]==$disposition_type){$string='';$path='';$bString=$attachment[5];if($bString){$string=$attachment[0];}else{$path=$attachment[0];}$inclhash=md5(serialize($attachment));if(in_array($inclhash,$incl)){continue;}$incl[]=$inclhash;$name=$attachment[2];$encoding=$attachment[3];$type=$attachment[4];$disposition=$attachment[6];$cid=$attachment[7];if($disposition=='inline'&&array_key_exists($cid,$cidUniq)){continue;}$cidUniq[$cid]=true;$mime[]=sprintf('--%s%s',$boundary,$this->LE);if(!empty($name)){$mime[]=sprintf('Content-Type: %s; name="%s"%s',$type,$this->encodeHeader($this->secureHeader($name)),$this->LE);}else{$mime[]=sprintf('Content-Type: %s%s',$type,$this->LE);}if($encoding!='7bit'){$mime[]=sprintf('Content-Transfer-Encoding: %s%s',$encoding,$this->LE);}if($disposition=='inline'){$mime[]=sprintf('Content-ID: <%s>%s',$cid,$this->LE);}if(!(empty($disposition))){$encoded_name=$this->encodeHeader($this->secureHeader($name));if(preg_match('/[ ()<>@,;:\"/[]?=]/',$encoded_name)){$mime[]=sprintf('Content-Disposition: %s; filename="%s"%s',$disposition,$encoded_name,$this->LE.$this->LE);}else{if(!empty($encoded_name)){$mime[]=sprintf('Content-Disposition: %s; filename=%s%s',$disposition,$encoded_name,$this->LE.$this->LE);}else{$mime[]=sprintf('Content-Disposition: %s%s',$disposition,$this->LE.$this->LE);}}}else{$mime[]=$this->LE;}if($bString){$mime[]=$this->encodeString($string,$encoding);if($this->isError()){return '';}$mime[]=$this->LE.$this->LE;}else{$mime[]=$this->encodeFile($path,$encoding);if($this->isError()){return '';}$mime[]=$this->LE.$this->LE;}}}$mime[]=sprintf('--%s--%s',$boundary,$this->LE);return implode('',$mime);}protected function encodeFile($path,$encoding='base64'){try{if(!is_readable($path)){throw new phpmailerException(('file_open').$path,self::STOP_CONTINUE);}$magic_quotes=get_magic_quotes_runtime();if($magic_quotes){if(version_compare(PHP_VERSION,'5.3.0','<')){set_magic_quotes_runtime(false);}else{ini_set('magic_quotes_runtime',false);}}$file_buffer=file_get_contents($path);$file_buffer=$this->encodeString($file_buffer,$encoding);if($magic_quotes){if(version_compare(PHP_VERSION,'5.3.0','<')){set_magic_quotes_runtime($magic_quotes);}else{ini_set('magic_quotes_runtime',$magic_quotes);}}return $file_buffer;}catch(Exception $exc){$this->setError($exc->getMessage());return '';}}public function encodeString($str,$encoding='base64'){$encoded='';switch(strtolower($encoding)){case 'base64':$encoded=chunk_split(base64_encode($str),76,$this->LE);break;case '7bit':case '8bit':$encoded=$this->fixEOL($str);if(substr($encoded,-(strlen($this->LE)))!=$this->LE){$encoded.=$this->LE;}break;case 'binary':$encoded=$str;break;case 'quoted-printable':$encoded=$this->encodeQP($str);break;default:$this->setError(('encoding').$encoding);break;}return $encoded;}public function encodeQP($string,$line_max=76){if(function_exists('quoted_printable_encode')){return quoted_printable_encode($string);}$string=str_replace(array('%20','%0D%0A.','%0D%0A','%'),array(' ',"rn=2E","rn",'='),rawurlencode($string));return preg_replace('/[^rn]{'.($line_max-3).'}[^=rn]{2}/',"$0=rn",$string);}public function encodeHeader($str,$position='text'){$matchcount=0;switch(strtolower($position)){case 'phrase':if(!preg_match('/[200-377]/',$str)){$encoded=addcslashes($str,"..37177\"");if(($str==$encoded)&&!preg_match('/[^A-Za-z0-9!#$%&'*+/=?^_`{|}~ -]/',$str)){return($encoded);}else{return(""$encoded"");}}$matchcount=preg_match_all('/[^404143-133135-176]/',$str,$matches);break;case 'comment':$matchcount=preg_match_all('/[()"]/',$str,$matches);case 'text':default:$matchcount+=preg_match_all('/[00-10131416-37177-377]/',$str,$matches);break;}if($matchcount==0){return($str);}$maxlen=75-7-strlen($this->CharSet);if($matchcount>strlen($str)/3){$encoding='B';if(function_exists('mb_strlen')&&$this->hasMultiBytes($str)){$encoded=$this->base64EncodeWrapMB($str,"n");}else{$encoded=base64_encode($str);$maxlen-=$maxlen%4;$encoded=trim(chunk_split($encoded,$maxlen,"n"));}}else{$encoding='Q';$encoded=$this->encodeQ($str,$position);$encoded=$this->wrapText($encoded,$maxlen,true);$encoded=str_replace('='.self::CRLF,"n",trim($encoded));}$encoded=preg_replace('/^(.*)$/m',' =?'.$this->CharSet."?$encoding?\1?=",$encoded);$encoded=trim(str_replace("n",$this->LE,$encoded));return $encoded;}public function encodeQ($str,$position='text'){$pattern='';$encoded=str_replace(array("r","n"),'',$str);switch(strtolower($position)){case 'phrase':$pattern='^A-Za-z0-9!*+/ -';break;case 'comment':$pattern='()"';case 'text':default:$pattern='00-11131416-377577137177-377'.$pattern;break;}$matches=array();if(preg_match_all("/[{$pattern}]/",$encoded,$matches)){$eqkey=array_search('=',$matches[0]);if(false!==$eqkey){unset($matches[0][$eqkey]);array_unshift($matches[0],'=');}foreach(array_unique($matches[0])as $char){$encoded=str_replace($char,'='.sprintf('%02X',ord($char)),$encoded);}}return str_replace(' ','_',$encoded);}public function wrapText($message,$length,$qp_mode=false){$soft_break=($qp_mode)?sprintf(' =%s',$this->LE):$this->LE;$is_utf8=(strtolower($this->CharSet)=='utf-8');$lelen=strlen($this->LE);$crlflen=strlen(self::CRLF);$message=$this->fixEOL($message);if(substr($message,-$lelen)==$this->LE){$message=substr($message,0,-$lelen);}$line=explode($this->LE,$message);$message='';for($i=0;$i<count($line);$i++){$line_part=explode(' ',$line[$i]);$buf='';for($e=0;$e<count($line_part);$e++){$word=$line_part[$e];if($qp_mode and(strlen($word)>$length)){$space_left=$length-strlen($buf)-$crlflen;if($e!=0){if($space_left>20){$len=$space_left;if($is_utf8){$len=$this->utf8CharBoundary($word,$len);}elseif(substr($word,$len-1,1)=='='){$len--;}elseif(substr($word,$len-2,1)=='='){$len-=2;}$part=substr($word,0,$len);$word=substr($word,$len);$buf.=' '.$part;$message.=$buf.sprintf('=%s',self::CRLF);}else{$message.=$buf.$soft_break;}$buf='';}while(strlen($word)>0){if($length<=0){break;}$len=$length;if($is_utf8){$len=$this->utf8CharBoundary($word,$len);}elseif(substr($word,$len-1,1)=='='){$len--;}elseif(substr($word,$len-2,1)=='='){$len-=2;}$part=substr($word,0,$len);$word=substr($word,$len);if(strlen($word)>0){$message.=$part.sprintf('=%s',self::CRLF);}else{$buf=$part;}}}else{$buf_o=$buf;$buf.=($e==0)?$word:(' '.$word);if(strlen($buf)>$length and $buf_o!=''){$message.=$buf_o.$soft_break;$buf=$word;}}}$message.=$buf.self::CRLF;}return $message;}public function utf8CharBoundary($encodedText,$maxLength){$foundSplitPos=false;$lookBack=3;while(!$foundSplitPos){$lastChunk=substr($encodedText,$maxLength-$lookBack,$lookBack);$encodedCharPos=strpos($lastChunk,'=');if(false!==$encodedCharPos){$hex=substr($encodedText,$maxLength-$lookBack+$encodedCharPos+1,2);$dec=hexdec($hex);if($dec<128){if($encodedCharPos>0){$maxLength=$maxLength-($lookBack-$encodedCharPos);}$foundSplitPos=true;}elseif($dec>=192){$maxLength=$maxLength-($lookBack-$encodedCharPos);$foundSplitPos=true;}elseif($dec<192){$lookBack+=3;}}else{$foundSplitPos=true;}}return $maxLength;}public function hasMultiBytes($str){if(function_exists('mb_strlen')){return(strlen($str)>mb_strlen($str,$this->CharSet));}else{return false;}}public function base64EncodeWrapMB($str,$linebreak=null){$start='=?'.$this->CharSet.'?B?';$end='?=';$encoded='';if($linebreak===null){$linebreak=$this->LE;}$mb_length=mb_strlen($str,$this->CharSet);$length=75-strlen($start)-strlen($end);$ratio=$mb_length/strlen($str);$avgLength=floor($length*$ratio*.75);for($i=0;$i<$mb_length;$i+=$offset){$lookBack=0;do{$offset=$avgLength-$lookBack;$chunk=mb_substr($str,$i,$offset,$this->CharSet);$chunk=base64_encode($chunk);$lookBack++;}while(strlen($chunk)>$length);$encoded.=$chunk.$linebreak;}$encoded=substr($encoded,0,-strlen($linebreak));return $encoded;}public function has8bitChars($text){return (boolean) preg_match('/[x80-xFF]/',$text);}public function inlineImageExists(){foreach($this->attachment as $attachment){if($attachment[6]=='inline'){return true;}}return false;}public function attachmentExists(){foreach($this->attachment as $attachment){if($attachment[6]=='attachment'){return true;}}return false;}public function alternativeExists(){return!empty($this->AltBody);}public static function rfcDate(){date_default_timezone_set(@date_default_timezone_get());return date('D, j M Y H:i:s O');}protected function serverHostname(){$result='localhost.localdomain';if(!empty($this->Hostname)){$result=$this->Hostname;}elseif(isset($_SERVER)and array_key_exists('SERVER_NAME',$_SERVER)and!empty($_SERVER['SERVER_NAME'])){$result=$_SERVER['SERVER_NAME'];}elseif(function_exists('gethostname')&&gethostname()!==false){$result=gethostname();}elseif(php_uname('n')!==false){$result=php_uname('n');}return $result;}public function isError(){return($this->error_count>0);}public function fixEOL($str){$nstr=str_replace(array("rn","r"),"n",$str);if($this->LE!=="n"){$nstr=str_replace("n",$this->LE,$nstr);}return $nstr;}public function msgHTML($message,$basedir='',$advanced=false){preg_match_all('/(src|background)=["'](.*)["']/Ui',$message,$images);if(array_key_exists(2,$images)){if(strlen($basedir)>1&&substr($basedir,-1)!='/'){$basedir.='/';}foreach($images[2]as $imgindex=>$url){if(preg_match('#^data:(image[^;,]*)(;base64)?,#',$url,$match)){$data=substr($url,strpos($url,','));if($match[2]){$data=base64_decode($data);}else{$data=rawurldecode($data);}$cid=md5($url).'@phpmailer.0';if($this->addStringEmbeddedImage($data,$cid,'embed'.$imgindex,'base64',$match[1])){$message=str_replace($images[0][$imgindex],$images[1][$imgindex].'="cid:'.$cid.'"',$message);}continue;}if(!empty($basedir)&&(strpos($url,'..')===false)&&substr($url,0,4)!=='cid:'&&!preg_match('#^[a-z][a-z0-9+.-]*:?//#i',$url)){$filename=basename($url);$directory=dirname($url);if($directory=='.'){$directory='';}$cid=md5($url).'@phpmailer.0';if(strlen($directory)>1&&substr($directory,-1)!='/'){$directory.='/';}}}}$this->isHTML(true);$this->Body=$this->normalizeBreaks($message);$this->AltBody=$this->normalizeBreaks($this->html2text($message,$advanced));if(!$this->alternativeExists()){$this->AltBody='To view this email message, open it in a program that understands HTML!'.self::CRLF.self::CRLF;}return $this->Body;}public function addStringEmbeddedImage($string,$cid,$name='',$encoding='base64',$type='',$disposition='inline'){if($type==''and!empty($name)){$type='application/octet-stream';}$this->attachment[]=array(0=>$string,1=>$name,2=>$name,3=>$encoding,4=>$type,5=>true,6=>$disposition,7=>$cid);return true;}public function html2text($html,$advanced=false){if(is_callable($advanced)){return call_user_func($advanced,$html);}$html=str_replace("<a href="","{ ",$html);$html=str_replace("">"," } ",$html);$html=str_replace("</a>","",$html);return html_entity_decode(trim(strip_tags(preg_replace('/<(head|title|style|script)[^>]*>.*?</\1>/si','',$html))),ENT_QUOTES,$this->CharSet);}public static function mb_pathinfo($path,$options=null){$ret=array('dirname'=>'','basename'=>'','extension'=>'','filename'=>'');$pathinfo=array();if(preg_match('%^(.*?)[\\/]*(([^/\\]*?)(.([^.\\/]+?)|))[\\/.]*$%im',$path,$pathinfo)){if(array_key_exists(1,$pathinfo)){$ret['dirname']=$pathinfo[1];}if(array_key_exists(2,$pathinfo)){$ret['basename']=$pathinfo[2];}if(array_key_exists(5,$pathinfo)){$ret['extension']=$pathinfo[5];}if(array_key_exists(3,$pathinfo)){$ret['filename']=$pathinfo[3];}}switch($options){case PATHINFO_DIRNAME:case 'dirname':return $ret['dirname'];case PATHINFO_BASENAME:case 'basename':return $ret['basename'];case PATHINFO_EXTENSION:case 'extension':return $ret['extension'];case PATHINFO_FILENAME:case 'filename':return $ret['filename'];default:return $ret;}}public function secureHeader($str){return trim(str_replace(array("r","n"),'',$str));}public static function normalizeBreaks($text,$breaktype="rn"){return preg_replace('/(rn|r|n)/ms',$breaktype,$text);}public static function hasLineLongerThanMax($str){return (boolean) preg_match('/^(.{'.(self::MAX_LINE_LENGTH+2).',})/m',$str);}protected function doCallback($isSent,$to,$cc,$bcc,$subject,$body,$from){if(!empty($this->action_function)&&is_callable($this->action_function)){$params=array($isSent,$to,$cc,$bcc,$subject,$body,$from);call_user_func_array($this->action_function,$params);}}}class phpmailerException extends Exception{public function errorMessage(){$errorMsg='<strong>'.$this->getMessage()."</strong><br />n";return $errorMsg;}}
- 
- 
+					case 'pcre8': return (boolean)preg_match('/^(?!(?>(?1)"?(?>\[ -~]|[^"])"?(?1)){255,})(?!(?>(?1)"?(?>\[ -~]|[^"])"?(?1)){65,}@)' . '((?>(?>(?>((?>(?>(?>x0Dx0A)?[t ])+|(?>[t ]*x0Dx0A)?[t ]+)?)(((?>(?2)' . '(?>[x01-x08x0Bx0Cx0E-' * -[] - x7F] | [x00 - x7F] | ( ? 3))) * ( ? 2)))) + ( ? 2)) | ( ? 2)) ?) '.'([! //-'*+/-9=?^-~-]+|"(?>(?2)(?>[x01-x08x0Bx0Cx0E-!#-[]-x7F]|\[x00-x7F]))*'.'(?2)")(?>(?1).(?1)(?4))*(?1)@(?!(?1)[a-z0-9-]{64,})(?1)(?>([a-z0-9](?>[a-z0-9-]*[a-z0-9])?)'.'(?>(?1).(?!(?1)[a-z0-9-]{64,})(?1)(?5)){0,126}|[(?:(?>IPv6:(?>([a-f0-9]{1,4})(?>:(?6)){7}'.'|(?!(?:.*[a-f0-9][:]]){8,})((?6)(?>:(?6)){0,6})?::(?7)?))|(?>(?>IPv6:(?>(?6)(?>:(?6)){5}:'.'|(?!(?:.*[a-f0-9]:){6,})(?8)?::(?>((?6)(?>:(?6)){0,4}):)?))?(25[0-5]|2[0-4][0-9]|1[0-9]{2}'.'|[1-9]?[0-9])(?>.(?9)){3}))])(?1)$/isD',$address);
+					case 'pcre':return (boolean) preg_match('/^(?!(?>"?(?>\[ -~]|[^"])"?){255,})(?!(?>"?(?>\[ -~]|[^"])"?){65,}@)(?>'.'[!#-'*+/-9=?^-~-]+|"(?>(?>[x01-x08x0Bx0Cx0E-!#-[]-x7F]|\[x00-xFF]))*")'.'(?>.(?>[!#-'*+/-9=?^-~-]+|"(?>(?>[x01-x08x0Bx0Cx0E-!#-[]-x7F]|\[x00-xFF]))*"))*'.'@(?>(?![a-z0-9-]{64,})(?>[a-z0-9](?>[a-z0-9-]*[a-z0-9])?)(?>.(?![a-z0-9-]{64,})'.'(?>[a-z0-9](?>[a-z0-9-]*[a-z0-9])?)){0,126}|[(?:(?>IPv6:(?>(?>[a-f0-9]{1,4})(?>:'.'[a-f0-9]{1,4}){7}|(?!(?:.*[a-f0-9][:]]){8,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,6})?'.'::(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,6})?))|(?>(?>IPv6:(?>[a-f0-9]{1,4}(?>:'.'[a-f0-9]{1,4}){5}:|(?!(?:.*[a-f0-9]:){6,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4})?'.'::(?>(?:[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4}):)?))?(?>25[0-5]|2[0-4][0-9]|1[0-9]{2}'.'|[1-9]?[0-9])(?>.(?>25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}))])$/isD',$address);
+					case 'html5':return (boolean) preg_match('/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}'.'[a-zA-Z0-9])?(?:.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/sD',$address);
+					case 'noregex':return(strlen($address)>=3 and strpos($address,'@')>=1 and strpos($address,'@')!=strlen($address)-1);
+					case 'php':default:return (boolean) filter_var($address,FILTER_VALIDATE_EMAIL);
+					}
+					}
+			public function idnSupported(){
+				return function_exists('idn_to_ascii')and function_exists('mb_convert_encoding');
+					}
+					
+					
+					
+public function punyencodeAddress($address)
+{
+	if ($this->idnSupported() and !empty($this->CharSet) and ($pos = strrpos($address, '@')) !== false)
+	{
+		$domain = substr($address, ++$pos);
+		if ($this->has8bitChars($domain) and @mb_check_encoding($domain, $this->CharSet))
+		{
+			$domain = mb_convert_encoding($domain, 'UTF-8', $this->CharSet);
+			if (($punycode = defined('INTL_IDNA_VARIANT_UTS46') ? idn_to_ascii($domain, 0, INTL_IDNA_VARIANT_UTS46) : idn_to_ascii($domain)) !== false)
+			{
+				return substr($address, 0, $pos) . $punycode;
+			}
+		}
+	}
+
+	return $address;
+}
+
+public function send()
+{
+	try
+	{
+		if (!$this->preSend())
+		{
+			return false;
+		}
+
+		return $this->postSend();
+	}
+
+	catch(phpmailerException $exc)
+	{
+		$this->mailHeader = '';
+		$this->setError($exc->getMessage());
+		if ($this->exceptions)
+		{
+			throw $exc;
+		}
+
+		return false;
+	}
+}
+
+public function preSend()
+{
+	try
+	{
+		$this->error_count = 0;
+		$this->mailHeader = '';
+		foreach(array_merge($this->RecipientsQueue, $this->ReplyToQueue) as $params)
+		{
+			$params[1] = $this->punyencodeAddress($params[1]);
+			call_user_func_array(array(
+				$this,
+				'addAnAddress'
+			) , $params);
+		}
+
+		if ((count($this->to) + count($this->cc) + count($this->bcc)) < 1)
+		{
+			throw new phpmailerException(('provide_address') , self::STOP_CRITICAL);
+		}
+
+		foreach(array(
+			'From',
+			'Sender',
+			'ConfirmReadingTo'
+		) as $address_kind)
+		{
+			$this->$address_kind = trim($this->$address_kind);
+			if (empty($this->$address_kind))
+			{
+				continue;
+			}
+
+			$this->$address_kind = $this->punyencodeAddress($this->$address_kind);
+			if (!$this->validateAddress($this->$address_kind))
+			{
+				$error_message = ('invalid_address') . ' (punyEncode) ' . $this->$address_kind;
+				$this->setError($error_message);
+				$this->edebug($error_message);
+				if ($this->exceptions)
+				{
+					throw new phpmailerException($error_message);
+				}
+
+				return false;
+			}
+		}
+
+		if ($this->alternativeExists())
+		{
+			$this->ContentType = 'multipart/alternative';
+		}
+
+		$this->setMessageType();
+		if (!$this->AllowEmpty and empty($this->Body))
+		{
+			throw new phpmailerException(('empty_message') , self::STOP_CRITICAL);
+		}
+
+		$this->MIMEHeader = '';
+		$this->MIMEBody = $this->createBody();
+		if ($this->Mailer == 'mail')
+		{
+			if (count($this->to) > 0)
+			{
+				$this->mailHeader.= $this->addrAppend('To', $this->to);
+			}
+			else
+			{
+				$this->mailHeader.= $this->headerLine('To', 'undisclosed-recipients:;');
+			}
+
+			$this->mailHeader.= $this->headerLine('Subject', $this->encodeHeader($this->secureHeader(trim($this->Subject))));
+		}
+
+		$tempheaders = $this->MIMEHeader;
+		$this->MIMEHeader = $this->createHeader();
+		$this->MIMEHeader.= $tempheaders;
+		return true;
+	}
+
+	catch(phpmailerException $exc)
+	{
+		$this->setError($exc->getMessage());
+		if ($this->exceptions)
+		{
+			throw $exc;
+		}
+
+		return false;
+	}
+}
+
+public function postSend()
+{
+	try
+	{
+		if ($this->Mailer == 'mail') return $this->mailSend($this->MIMEHeader, $this->MIMEBody);
+		return $this->smtpSend($this->MIMEHeader, $this->MIMEBody);
+	}
+
+	catch(phpmailerException $exc)
+	{
+		$this->setError($exc->getMessage());
+		$this->edebug($exc->getMessage());
+		if ($this->exceptions)
+		{
+			throw $exc;
+		}
+	}
+
+	return false;
+}
+
+public
+
+function getSMTPInstance()
+{
+	if (!is_object($this->smtp))
+	{
+		$this->smtp = new SMTP;
+	}
+
+	return $this->smtp;
+}
+
+protected function mailSend($header, $body)
+{
+	$toArr = array();
+	foreach($this->to as $toaddr)
+	{
+		$toArr[] = $this->addrFormat($toaddr);
+	}
+
+	$to = implode(', ', $toArr);
+	$params = null;
+	if (!empty($this->Sender) and $this->validateAddress($this->Sender))
+	{
+		if (self::isShellSafe($this->Sender))
+		{
+			$params = sprintf('-f%s', $this->Sender);
+		}
+	}
+
+	if (!empty($this->Sender) and !ini_get('safe_mode') and $this->validateAddress($this->Sender))
+	{
+		$old_from = ini_get('sendmail_from');
+		ini_set('sendmail_from', $this->Sender);
+	}
+
+	$result = false;
+	if ($this->SingleTo and count($toArr) > 1)
+	{
+		foreach($toArr as $toAddr)
+		{
+			$result = $this->mailPassthru($toAddr, $this->Subject, $body, $header, $params);
+			$this->doCallback($result, array(
+				$toAddr
+			) , $this->cc, $this->bcc, $this->Subject, $body, $this->From);
+		}
+	}
+	else
+	{
+		$result = $this->mailPassthru($to, $this->Subject, $body, $header, $params);
+		$this->doCallback($result, $this->to, $this->cc, $this->bcc, $this->Subject, $body, $this->From);
+	}
+
+	if (isset($old_from))
+	{
+		ini_set('sendmail_from', $old_from);
+	}
+
+	if (!$result)
+	{
+		throw new phpmailerException(('instantiate') , self::STOP_CRITICAL);
+	}
+
+	return true;
+}
+
+protected static
+function isShellSafe($string)
+{
+	if (escapeshellcmd($string) !== $string or !in_array(escapeshellarg($string) , array(
+		"'$string'",
+		""$string""
+	)))
+	{
+		return false;
+	}
+
+	$length = strlen($string);
+	for ($i = 0; $i < $length; $i++)
+	{
+		$c = $string[$i];
+		if (!ctype_alnum($c) && strpos('@_-.', $c) === false)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+protected function smtpSend($header, $body)
+{
+	$bad_rcpt = array();
+	if (!$this->smtpConnect($this->SMTPOptions))
+	{
+		throw new phpmailerException(('smtp_connect_failed') , self::STOP_CRITICAL);
+	}
+
+	if (!empty($this->Sender) and $this->validateAddress($this->Sender))
+	{
+		$smtp_from = $this->Sender;
+	}
+	else
+	{
+		$smtp_from = $this->From;
+	}
+
+	if (!$this->smtp->mail($smtp_from))
+	{
+		$this->setError(('from_failed') . $smtp_from . ' : ' . implode(',', $this->smtp->getError()));
+		throw new phpmailerException($this->ErrorInfo, self::STOP_CRITICAL);
+	}
+
+	foreach(array(
+		$this->to,
+		$this->cc,
+		$this->bcc
+	) as $togroup)
+	{
+		foreach($togroup as $to)
+		{
+			if (!$this->smtp->recipient($to[0]))
+			{
+				$error = $this->smtp->getError();
+				$bad_rcpt[] = array(
+					'to' => $to[0],
+					'error' => $error['detail']
+				);
+				$isSent = false;
+			}
+			else
+			{
+				$isSent = true;
+			}
+
+			$this->doCallback($isSent, array(
+				$to[0]
+			) , array() , array() , $this->Subject, $body, $this->From);
+		}
+	}
+
+	if ((count($this->all_recipients) > count($bad_rcpt)) and !$this->smtp->data($header . $body))
+	{
+		throw new phpmailerException(('data_not_accepted') , self::STOP_CRITICAL);
+	}
+
+	if ($this->SMTPKeepAlive)
+	{
+		$this->smtp->reset();
+	}
+	else
+	{
+		$this->smtp->quit();
+		$this->smtp->close();
+	}
+
+	if (count($bad_rcpt) > 0)
+	{
+		$errstr = '';
+		foreach($bad_rcpt as $bad)
+		{
+			$errstr.= $bad['to'] . ': ' . $bad['error'];
+		}
+
+		throw new phpmailerException(('recipients_failed') . $errstr, self::STOP_CONTINUE);
+	}
+
+	return true;
+}
+
+public
+
+function smtpConnect($options = null)
+{
+	if (is_null($this->smtp))
+	{
+		$this->smtp = $this->getSMTPInstance();
+	}
+
+	if (is_null($options))
+	{
+		$options = $this->SMTPOptions;
+	}
+
+	if ($this->smtp->connected())
+	{
+		return true;
+	}
+
+	$this->smtp->setTimeout($this->Timeout);
+	$this->smtp->setDebugLevel($this->SMTPDebug);
+	$this->smtp->setDebugOutput($this->Debugoutput);
+	$this->smtp->setVerp($this->do_verp);
+	$hosts = explode(';', $this->Host);
+	$lastexception = null;
+	foreach($hosts as $hostentry)
+	{
+		$hostinfo = array();
+		if (!preg_match('/^((ssl|tls)://)*([a-zA-Z0-9:[].-]*):?([0-9]*)$/', trim($hostentry) , $hostinfo))
+		{
+			continue;
+		}
+
+		$prefix = '';
+		$secure = $this->SMTPSecure;
+		$tls = ($this->SMTPSecure == 'tls');
+		if ('ssl' == $hostinfo[2] or ('' == $hostinfo[2] and 'ssl' == $this->SMTPSecure))
+		{
+			$prefix = 'ssl://';
+			$tls = false;
+			$secure = 'ssl';
+		}
+		elseif ($hostinfo[2] == 'tls')
+		{
+			$tls = true;
+			$secure = 'tls';
+		}
+
+		$sslext = defined('OPENSSL_ALGO_SHA1');
+		if ('tls' === $secure or 'ssl' === $secure)
+		{
+			if (!$sslext)
+			{
+				throw new phpmailerException(('extension_missing') . 'openssl', self::STOP_CRITICAL);
+			}
+		}
+
+		$host = $hostinfo[3];
+		$port = $this->Port;
+		$tport = (integer)$hostinfo[4];
+		if ($tport > 0 and $tport < 65536)
+		{
+			$port = $tport;
+		}
+
+		if ($this->smtp->connect($prefix . $host, $port, $this->Timeout, $options))
+		{
+			try
+			{
+				if ($this->Helo)
+				{
+					$hello = $this->Helo;
+				}
+				else
+				{
+					$hello = $this->serverHostname();
+				}
+
+				$this->smtp->hello($hello);
+				if ($this->SMTPAutoTLS and $sslext and $secure != 'ssl' and $this->smtp->getServerExt('STARTTLS'))
+				{
+					$tls = true;
+				}
+
+				if ($tls)
+				{
+					if (!$this->smtp->startTLS())
+					{
+						throw new phpmailerException(('connect_host'));
+					}
+
+					$this->smtp->hello($hello);
+				}
+
+				if ($this->SMTPAuth)
+				{
+					if (!$this->smtp->authenticate($this->Username, $this->Password, $this->AuthType, $this->Realm, $this->Workstation))
+					{
+						throw new phpmailerException(('authenticate'));
+					}
+				}
+
+				return true;
+			}
+
+			catch(phpmailerException $exc)
+			{
+				$lastexception = $exc;
+				$this->edebug($exc->getMessage());
+				$this->smtp->quit();
+			}
+		}
+	}
+
+	$this->smtp->close();
+	if ($this->exceptions and !is_null($lastexception))
+	{
+		throw $lastexception;
+	}
+
+	return false;
+}
+
+public
+
+function smtpClose()
+{
+	if (is_a($this->smtp, 'SMTP'))
+	{
+		if ($this->smtp->connected())
+		{
+			$this->smtp->quit();
+			$this->smtp->close();
+		}
+	}
+}
+
+public
+
+function addrAppend($type, $addr)
+{
+	$addresses = array();
+	foreach($addr as $address)
+	{
+		$addresses[] = $this->addrFormat($address);
+	}
+
+	return $type . ': ' . implode(', ', $addresses) . $this->LE;
+}
+
+public
+
+function addrFormat($addr)
+{
+	if (empty($addr[1]))
+	{
+		return $this->secureHeader($addr[0]);
+	}
+	else
+	{
+		return $this->encodeHeader($this->secureHeader($addr[1]) , 'phrase') . ' <' . $this->secureHeader($addr[0]) . '>';
+	}
+}
+
+public
+
+function setWordWrap()
+{
+	if ($this->WordWrap < 1)
+	{
+		return;
+	}
+
+	switch ($this->message_type)
+	{
+	case 'alt':
+	case 'alt_inline':
+	case 'alt_attach':
+	case 'alt_inline_attach':
+		$this->AltBody = $this->wrapText($this->AltBody, $this->WordWrap);
+		break;
+
+	default:
+		$this->Body = $this->wrapText($this->Body, $this->WordWrap);
+		break;
+	}
+}
+
+public
+
+function createHeader()
+{
+	$result = '';
+	$result.= $this->headerLine('Date', $this->MessageDate == '' ? self::rfcDate() : $this->MessageDate);
+	if ($this->SingleTo)
+	{
+		if ($this->Mailer != 'mail')
+		{
+			foreach($this->to as $toaddr)
+			{
+				$this->SingleToArray[] = $this->addrFormat($toaddr);
+			}
+		}
+	}
+	else
+	{
+		if (count($this->to) > 0)
+		{
+			if ($this->Mailer != 'mail')
+			{
+				$result.= $this->addrAppend('To', $this->to);
+			}
+		}
+		elseif (count($this->cc) == 0)
+		{
+			$result.= $this->headerLine('To', 'undisclosed-recipients:;');
+		}
+	}
+
+	$result.= $this->addrAppend('From', array(
+		array(
+			trim($this->From) ,
+			$this->FromName
+		)
+	));
+	if (count($this->cc) > 0)
+	{
+		$result.= $this->addrAppend('Cc', $this->cc);
+	}
+
+	if (($this->Mailer == 'sendmail' or $this->Mailer == 'qmail' or $this->Mailer == 'mail') and count($this->bcc) > 0)
+	{
+		$result.= $this->addrAppend('Bcc', $this->bcc);
+	}
+
+	if (count($this->ReplyTo) > 0)
+	{
+		$result.= $this->addrAppend('Reply-To', $this->ReplyTo);
+	}
+
+	if ($this->Mailer != 'mail')
+	{
+		$result.= $this->headerLine('Subject', $this->encodeHeader($this->secureHeader($this->Subject)));
+	}
+
+	if ('' != $this->MessageID and preg_match('/^<.*@.*>$/', $this->MessageID))
+	{
+		$this->lastMessageID = $this->MessageID;
+	}
+	else
+	{
+		$this->lastMessageID = sprintf('<%s@%s>', $this->uniqueid, $this->serverHostname());
+	}
+
+	$result.= $this->headerLine('Message-ID', $this->lastMessageID);
+	if (!is_null($this->Priority))
+	{
+		$result.= $this->headerLine('X-Priority', $this->Priority);
+	}
+
+	if ($this->XMailer == '')
+	{
+		$result.= $this->headerLine('X-Mailer', 'PHPMailer ' . $this->Version . ' (https://github.com/PHPMailer/PHPMailer)');
+	}
+	else
+	{
+		$myXmailer = trim($this->XMailer);
+		if ($myXmailer)
+		{
+			$result.= $this->headerLine('X-Mailer', $myXmailer);
+		}
+	}
+
+	if ($this->ConfirmReadingTo != '')
+	{
+		$result.= $this->headerLine('Disposition-Notification-To', '<' . $this->ConfirmReadingTo . '>');
+	}
+
+	foreach($this->CustomHeader as $header)
+	{
+		$result.= $this->headerLine(trim($header[0]) , $this->encodeHeader(trim($header[1])));
+	}
+
+	if (!$this->sign_key_file)
+	{
+		$result.= $this->headerLine('MIME-Version', '1.0');
+		$result.= $this->getMailMIME();
+	}
+
+	return $result;
+}
+
+public
+
+function getMailMIME()
+{
+	$result = '';
+	$ismultipart = true;
+	switch ($this->message_type)
+	{
+	case 'inline':
+		$result.= $this->headerLine('Content-Type', 'multipart/related;');
+		$result.= $this->textLine("tboundary="".$this->boundary[1].'"');break;case 'attach':case 'inline_attach':case 'alt_attach':case 'alt_inline_attach':$result.=$this->headerLine('Content - Type','multipart / mixed;
+		');$result.=$this->textLine("tboundary="".$this->boundary[1].'"');break;case 'alt':case 'alt_inline':$result.=$this->headerLine('Content-Type','multipart/alternative;');$result.=$this->textLine("tboundary = "" . $this->boundary[1] . '"');
+		break;
+
+	default:
+		$result.= $this->textLine('Content-Type: ' . $this->ContentType . '; charset=' . $this->CharSet);
+		$ismultipart = false;
+		break;
+	}
+
+	if ($this->Encoding != '7bit')
+	{
+		if ($ismultipart)
+		{
+			if ($this->Encoding == '8bit')
+			{
+				$result.= $this->headerLine('Content-Transfer-Encoding', '8bit');
+			}
+		}
+		else
+		{
+			$result.= $this->headerLine('Content-Transfer-Encoding', $this->Encoding);
+		}
+	}
+
+	if ($this->Mailer != 'mail')
+	{
+		$result.= $this->LE;
+	}
+
+	return $result;
+}
+
+protected
+function generateId()
+{
+	return md5(uniqid(time()));
+}
+
+public
+
+function createBody()
+{
+	$body = '';
+	$this->uniqueid = $this->generateId();
+	$this->boundary[1] = 'b1_' . $this->uniqueid;
+	$this->boundary[2] = 'b2_' . $this->uniqueid;
+	$this->boundary[3] = 'b3_' . $this->uniqueid;
+	if ($this->sign_key_file)
+	{
+		$body.= $this->getMailMIME() . $this->LE;
+	}
+
+	$this->setWordWrap();
+	$bodyEncoding = $this->Encoding;
+	$bodyCharSet = $this->CharSet;
+	if ($bodyEncoding == '8bit' and !$this->has8bitChars($this->Body))
+	{
+		$bodyEncoding = '7bit';
+		$bodyCharSet = 'us-ascii';
+	}
+
+	if ('base64' != $this->Encoding and self::hasLineLongerThanMax($this->Body))
+	{
+		$bodyEncoding = 'quoted-printable';
+	}
+
+	$altBodyEncoding = $this->Encoding;
+	$altBodyCharSet = $this->CharSet;
+	if ($altBodyEncoding == '8bit' and !$this->has8bitChars($this->AltBody))
+	{
+		$altBodyEncoding = '7bit';
+		$altBodyCharSet = 'us-ascii';
+	}
+
+	if ('base64' != $altBodyEncoding and self::hasLineLongerThanMax($this->AltBody))
+	{
+		$altBodyEncoding = 'quoted-printable';
+	}
+
+	$mimepre = "This is a multi-part message in MIME format." . $this->LE . $this->LE;
+	switch ($this->message_type)
+	{
+	case 'inline':
+		$body.= $mimepre;
+		$body.= $this->getBoundary($this->boundary[1], $bodyCharSet, '', $bodyEncoding);
+		$body.= $this->encodeString($this->Body, $bodyEncoding);
+		$body.= $this->LE . $this->LE;
+		$body.= $this->attachAll('inline', $this->boundary[1]);
+		break;
+
+	case 'attach':
+		$body.= $mimepre;
+		$body.= $this->getBoundary($this->boundary[1], $bodyCharSet, '', $bodyEncoding);
+		$body.= $this->encodeString($this->Body, $bodyEncoding);
+		$body.= $this->LE . $this->LE;
+		$body.= $this->attachAll('attachment', $this->boundary[1]);
+		break;
+
+	case 'inline_attach':
+		$body.= $mimepre;
+		$body.= $this->textLine('--' . $this->boundary[1]);
+		$body.= $this->headerLine('Content-Type', 'multipart/related;');
+		$body.= $this->textLine("tboundary="".$this->boundary[2].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[2],$bodyCharSet,'',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('inline',$this->boundary[2]);$body.=$this->LE;$body.=$this->attachAll('attachment',$this->boundary[1]);break;case 'alt':$body.=$mimepre;$body.=$this->getBoundary($this->boundary[1],$altBodyCharSet,'text / plain',$altBodyEncoding);$body.=$this->encodeString($this->AltBody,$altBodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->getBoundary($this->boundary[1],$bodyCharSet,'text / html',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;if(!empty($this->Ical)){$body.=$this->getBoundary($this->boundary[1],'','text / calendar;
+		method = REQUEST','');$body.=$this->encodeString($this->Ical,$this->Encoding);$body.=$this->LE.$this->LE;}$body.=$this->endBoundary($this->boundary[1]);break;case 'alt_inline':$body.=$mimepre;$body.=$this->getBoundary($this->boundary[1],$altBodyCharSet,'text / plain',$altBodyEncoding);$body.=$this->encodeString($this->AltBody,$altBodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->textLine('--'.$this->boundary[1]);$body.=$this->headerLine('Content - Type','multipart / related;
+		');$body.=$this->textLine("tboundary="".$this->boundary[2].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[2],$bodyCharSet,'text/html',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('inline',$this->boundary[2]);$body.=$this->LE;$body.=$this->endBoundary($this->boundary[1]);break;case 'alt_attach':$body.=$mimepre;$body.=$this->textLine('--'.$this->boundary[1]);$body.=$this->headerLine('Content-Type','multipart/alternative;');$body.=$this->textLine("tboundary = "" . $this->boundary[2] . '"');
+		$body.= $this->LE;
+		$body.= $this->getBoundary($this->boundary[2], $altBodyCharSet, 'text/plain', $altBodyEncoding);
+		$body.= $this->encodeString($this->AltBody, $altBodyEncoding);
+		$body.= $this->LE . $this->LE;
+		$body.= $this->getBoundary($this->boundary[2], $bodyCharSet, 'text/html', $bodyEncoding);
+		$body.= $this->encodeString($this->Body, $bodyEncoding);
+		$body.= $this->LE . $this->LE;
+		$body.= $this->endBoundary($this->boundary[2]);
+		$body.= $this->LE;
+		$body.= $this->attachAll('attachment', $this->boundary[1]);
+		break;
+
+	case 'alt_inline_attach':
+		$body.= $mimepre;
+		$body.= $this->textLine('--' . $this->boundary[1]);
+		$body.= $this->headerLine('Content-Type', 'multipart/alternative;');
+		$body.= $this->textLine("tboundary="".$this->boundary[2].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[2],$altBodyCharSet,'text / plain',$altBodyEncoding);$body.=$this->encodeString($this->AltBody,$altBodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->textLine('--'.$this->boundary[2]);$body.=$this->headerLine('Content - Type','multipart / related;
+		');$body.=$this->textLine("tboundary="".$this->boundary[3].'"');$body.=$this->LE;$body.=$this->getBoundary($this->boundary[3],$bodyCharSet,'text/html',$bodyEncoding);$body.=$this->encodeString($this->Body,$bodyEncoding);$body.=$this->LE.$this->LE;$body.=$this->attachAll('inline',$this->boundary[3]);$body.=$this->LE;$body.=$this->endBoundary($this->boundary[2]);$body.=$this->LE;$body.=$this->attachAll('attachment',$this->boundary[1]);break;default:$this->Encoding=$bodyEncoding;$body.=$this->encodeString($this->Body,$this->Encoding);break;}if($this->isError()){$body = '';
+		}elseif($this->sign_key_file){try{if(!defined('PKCS7_TEXT')){throw new phpmailerException(('extension_missing').'openssl');}$file=tempnam(sys_get_temp_dir(),'mail');if(false===file_put_contents($file,$body)){throw new phpmailerException(('signing').' Could not write temp file');}$signed=tempnam(sys_get_temp_dir(),'signed');if(empty($this->sign_extracerts_file)){$sign = @openssl_pkcs7_sign($file, $signed, 'file://' . realpath($this->sign_cert_file) , array(
+			'file://' . realpath($this->sign_key_file) ,
+			$this->sign_key_pass
+		) , null);
+		}else{$sign = @openssl_pkcs7_sign($file, $signed, 'file://' . realpath($this->sign_cert_file) , array(
+			'file://' . realpath($this->sign_key_file) ,
+			$this->sign_key_pass
+		) , null, PKCS7_DETACHED, $this->sign_extracerts_file);
+		}if($sign){@unlink($file);$body=file_get_contents($signed);@unlink($signed);$parts=explode("nn",$body,2);$this->MIMEHeader.=$parts[0].$this->LE.$this->LE;$body=$parts[1];}else{@unlink($file);@unlink($signed);throw new phpmailerException(('signing').openssl_error_string());}}catch(phpmailerException $exc){$body = '';
+		if ($this->exceptions)
+		{
+			throw $exc;
+			}}
